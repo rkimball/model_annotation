@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     print(A)
 
-    result = ex.evaluate()(*[A, B, C])
+    result = ex.evaluate()(A, B, C)
 
 
     print(result)
