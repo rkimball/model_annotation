@@ -45,6 +45,11 @@ if __name__ == "__main__":
     mod = tvm.IRModule()
     mod["main"] = func
 
+    mod = relay.transform.InferType()(mod)
+    mod = relay.transform.VisualizeGraph("source.pdf")(mod)
+
+    # VisualizeGraph
+
     ctx = tvm.context("llvm", 0)
     ex = tvm.relay.create_executor(mod=mod, ctx=ctx, target="llvm")
 
