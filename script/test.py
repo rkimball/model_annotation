@@ -71,7 +71,8 @@ if __name__ == "__main__":
     patterns = get_pattern_table("apu")
     mod = relay.transform.MergeComposite(patterns)(mod)
 
-    # VisualizeGraph
+    mod = relay.transform.InferType()(mod)
+    mod = relay.transform.VisualizeGraph("mod.pdf")(mod)
 
     ctx = tvm.context("llvm", 0)
     ex = tvm.relay.create_executor(mod=mod, ctx=ctx, target="llvm")
