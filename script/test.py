@@ -1,7 +1,27 @@
 import tvm
 import numpy as np
+import tvm.ir
 from tvm import relay, tir
 from tvm.relay.dataflow_pattern import TupleGetItemPattern, is_op, wildcard
+from tvm.relay.op.contrib.register import get_pattern_table, register_pattern_table
+# from .register import register_pattern_table
+
+
+@register_pattern_table("apu")
+def pattern_table():
+    """Get the APU compiler pattern table."""
+
+    def multiply():
+        pattern = is_op("multiply")(wildcard(), wildcard())
+        return pattern
+
+    def check_multiply(extract):
+        """Check if multiply is supported."""
+        return True
+
+    return [
+        ("apu_ops", multiply(), check_multiply)
+    ]
 
 
 # def make_add_pattern():
@@ -47,6 +67,9 @@ if __name__ == "__main__":
 
     mod = relay.transform.InferType()(mod)
     mod = relay.transform.VisualizeGraph("source.pdf")(mod)
+
+    patterns = get_pattern_table("apu")
+    mod = relay.transform.MergeComposite(patterns)(mod)
 
     # VisualizeGraph
 
