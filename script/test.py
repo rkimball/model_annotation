@@ -70,9 +70,18 @@ if __name__ == "__main__":
 
     patterns = get_pattern_table("apu")
     mod = relay.transform.MergeComposite(patterns)(mod)
-
+    mod = relay.transform.AnnotateTarget(targets=["llvm"])(mod)
     mod = relay.transform.InferType()(mod)
-    mod = relay.transform.VisualizeGraph("mod.pdf")(mod)
+    mod = relay.transform.VisualizeGraph("post_MergeComposite.pdf")(mod)
+
+    mod = relay.transform.MergeCompilerRegions()(mod)
+    mod = relay.transform.InferType()(mod)
+    mod = relay.transform.VisualizeGraph("post_MergeCompilerRegions.pdf")(mod)
+
+    mod = relay.transform.PartitionGraph()(mod)
+    mod = relay.transform.InferType()(mod)
+    mod = relay.transform.VisualizeGraph("post_PartitionGraph.pdf")(mod)
+    print(mod)
 
     ctx = tvm.context("llvm", 0)
     ex = tvm.relay.create_executor(mod=mod, ctx=ctx, target="llvm")
@@ -84,6 +93,5 @@ if __name__ == "__main__":
     print(A)
 
     result = ex.evaluate()(A, B, C)
-
 
     print(result)
