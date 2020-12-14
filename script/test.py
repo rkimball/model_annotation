@@ -8,7 +8,7 @@ from tvm.relay.op.annotation import compiler_begin, compiler_end
 # from .register import register_pattern_table
 
 
-@register_pattern_table("apu")
+@register_pattern_table("test_target")
 def pattern_table():
     """Get the APU compiler pattern table."""
 
@@ -21,7 +21,7 @@ def pattern_table():
         return True
 
     return [
-        ("apu_ops", multiply(), check_multiply)
+        ("test_target.multiply", multiply(), check_multiply)
     ]
 
 
@@ -100,35 +100,23 @@ def get_annotated_model():
 
 
 if __name__ == "__main__":
-    # a = relay.var("a", shape=(2, 3))
-    # b = relay.var("b", shape=(2, 3))
-    # c = relay.var("c", shape=(2, 3))
-    # add1 = relay.add(a, b)
-    # add2 = relay.add(a, b)
-    # mul1 = relay.multiply(add1, add2)
-    # mul2 = relay.multiply(mul1, c)
-    # mul3 = relay.multiply(mul1, c)
-    # add3 = relay.add(mul2, mul3)
-    # func = relay.Function([a, b, c], add3)
-
-    # mod = tvm.IRModule()
-    # mod["main"] = func
-    mod = get_annotated_model()
+    # mod = get_annotated_model()
+    mod = get_model()
 
     mod = relay.transform.InferType()(mod)
     mod = relay.transform.VisualizeGraph("source.pdf")(mod)
 
-    # patterns = get_pattern_table("apu")
-    # mod = relay.transform.MergeComposite(patterns)(mod)
-    # mod = relay.transform.AnnotateTarget("llvm")(mod)
-    # mod = relay.transform.InferType()(mod)
-    # mod = relay.transform.VisualizeGraph("post_MergeComposite.pdf")(mod)
-
-    mod = relay.transform.MergeCompilerRegions()(mod)
+    patterns = get_pattern_table("test_target")
+    mod = relay.transform.MergeComposite(patterns)(mod)
+    mod = relay.transform.AnnotateTarget("test_target")(mod)
     mod = relay.transform.InferType()(mod)
-    mod = relay.transform.VisualizeGraph("post_MergeCompilerRegions.pdf")(mod)
+    mod = relay.transform.VisualizeGraph("post_MergeComposite.pdf")(mod)
 
-    mod = relay.transform.PartitionGraph()(mod)
+    # mod = relay.transform.MergeCompilerRegions()(mod)
+    # mod = relay.transform.InferType()(mod)
+    # mod = relay.transform.VisualizeGraph("post_MergeCompilerRegions.pdf")(mod)
+
+    # mod = relay.transform.PartitionGraph()(mod)
     # mod = relay.transform.InferType()(mod)
     # mod = relay.transform.VisualizeGraph("post_PartitionGraph.pdf")(mod)
     print(mod)
