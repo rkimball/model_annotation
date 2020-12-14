@@ -79,14 +79,14 @@ def get_annotated_model():
     add1_e = compiler_end(add1, "default")
     add2_e = compiler_end(add2, "default")
 
-    add1_b = compiler_begin(add1_e, "test_target")
-    add2_b = compiler_begin(add2_e, "test_target")
+    add1_b = compiler_begin(add1_e, "llvm")
+    add2_b = compiler_begin(add2_e, "llvm")
     mul1 = relay.multiply(add1_b, add2_b)
-    c_b = compiler_begin(c, "test_target")
+    c_b = compiler_begin(c, "llvm")
     mul2 = relay.multiply(mul1, c_b)
     mul3 = relay.multiply(mul1, c_b)
-    mul2_e = compiler_end(mul2, "test_target")
-    mul3_e = compiler_end(mul3, "test_target")
+    mul2_e = compiler_end(mul2, "llvm")
+    mul3_e = compiler_end(mul3, "llvm")
 
     mul2_b = compiler_begin(mul2_e, "default")
     mul3_b = compiler_begin(mul3_e, "default")
@@ -124,17 +124,17 @@ if __name__ == "__main__":
     # mod = relay.transform.InferType()(mod)
     # mod = relay.transform.VisualizeGraph("post_MergeComposite.pdf")(mod)
 
-    # mod = relay.transform.MergeCompilerRegions()(mod)
-    # mod = relay.transform.InferType()(mod)
-    # mod = relay.transform.VisualizeGraph("post_MergeCompilerRegions.pdf")(mod)
+    mod = relay.transform.MergeCompilerRegions()(mod)
+    mod = relay.transform.InferType()(mod)
+    mod = relay.transform.VisualizeGraph("post_MergeCompilerRegions.pdf")(mod)
 
-    # mod = relay.transform.PartitionGraph()(mod)
+    mod = relay.transform.PartitionGraph()(mod)
     # mod = relay.transform.InferType()(mod)
     # mod = relay.transform.VisualizeGraph("post_PartitionGraph.pdf")(mod)
     print(mod)
 
-    # ctx = tvm.context("llvm", 0)
-    # ex = tvm.relay.create_executor(mod=mod, ctx=ctx, target="llvm")
+    ctx = tvm.context("llvm", 0)
+    ex = tvm.relay.create_executor(mod=mod, ctx=ctx, target="llvm")
 
     # A = tvm.nd.array(np.array([[1, 2, 3], [4, 5, 6]], dtype="float32"), ctx=ctx)
     # B = tvm.nd.array(np.array([[8, 7, 6], [5, 4, 3]], dtype="float32"), ctx=ctx)
