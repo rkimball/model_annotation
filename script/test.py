@@ -107,8 +107,9 @@ def get_annotated2_model():
     mul1_e = compiler_end(mul1, "test_target")
 
     c_b = compiler_begin(c, "test_target")
-    mul2 = relay.multiply(mul1_e, c_b)
-    mul3 = relay.multiply(mul1_e, c_b)
+    mul1_b = compiler_begin(mul1_e, "test_target")
+    mul2 = relay.multiply(mul1_b, c_b)
+    mul3 = relay.multiply(mul1_b, c_b)
     mul2_e = compiler_end(mul2, "test_target")
     mul3_e = compiler_end(mul3, "test_target")
 
@@ -133,6 +134,7 @@ if __name__ == "__main__":
     mod = relay.transform.VisualizeGraph("source.pdf")(mod)
 
     mod = relay.transform.AnnotateCompiler()(mod)
+    print(mod)
 
     # this block does not work since MergeComposite is for making fused ops of known op
     # sequences. We don't have a known sequence of ops, we only have a list of ops which
