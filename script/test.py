@@ -5,6 +5,8 @@ from tvm import relay, tir
 from tvm.relay.dataflow_pattern import TupleGetItemPattern, is_op, wildcard
 from tvm.relay.op.contrib.register import get_pattern_table, register_pattern_table
 from tvm.relay.op.annotation import compiler_begin, compiler_end
+from tvm.relay.expr import Call, TupleGetItem, Var, Constant, Tuple
+from tvm.ir import Op
 # from .register import register_pattern_table
 
 
@@ -124,37 +126,26 @@ def get_annotated2_model():
     return mod
 
 
+def get_placement(expr):
+    target_ops = ["multiply"]
+    placement = "default"
+    if isinstance(expr, Call):
+        if isinstance(expr.op, Op):
+            if expr.op.name in target_ops:
+                placement = "test_target"
+    return placement
+
 
 if __name__ == "__main__":
     mod = get_model()
-    # mod = get_annotated2_model()
     print(mod)
 
-    mod = relay.transform.InferType()(mod)
-    mod = relay.transform.VisualizeGraph("source.pdf")(mod)
+    mod = relay.transform.AnnotateCompiler(get_placement)(mod)
 
-    mod = relay.transform.AnnotateCompiler()(mod)
     print(mod)
-
-    # this block does not work since MergeComposite is for making fused ops of known op
-    # sequences. We don't have a known sequence of ops, we only have a list of ops which
-    # work on a target platform. We don't want each known op in its own function.
-    # patterns = get_pattern_table("test_target")
-    # mod = relay.transform.MergeComposite(patterns)(mod)
-    # # mod = relay.transform.AnnotateTarget("test_target")(mod)
-    # mod = relay.transform.InferType()(mod)
-    # mod = relay.transform.VisualizeGraph("post_MergeComposite.pdf")(mod)
 
     mod = relay.transform.MergeCompilerRegions()(mod)
-    mod = relay.transform.InferType()(mod)
-    mod = relay.transform.VisualizeGraph("post_MergeCompilerRegions.pdf")(mod)
-
     mod = relay.transform.PartitionGraph()(mod)
-    # mod = relay.transform.InferType()(mod)
-    # mod = relay.transform.VisualizeGraph("post_PartitionGraph.pdf")(mod)
-
-
-    # mod = relay.transform.VisualizeGraph("source.pdf")(mod)
 
     print(mod)
 
@@ -164,8 +155,6 @@ if __name__ == "__main__":
     # A = tvm.nd.array(np.array([[1, 2, 3], [4, 5, 6]], dtype="float32"), ctx=ctx)
     # B = tvm.nd.array(np.array([[8, 7, 6], [5, 4, 3]], dtype="float32"), ctx=ctx)
     # C = tvm.nd.array(np.array([[10, 11, 12], [13, 14, 15]], dtype="float32"), ctx=ctx)
-
-    # print(A)
 
     # result = ex.evaluate()(A, B, C)
 
