@@ -74,13 +74,25 @@ if __name__ == "__main__":
 
     # target_host = "llvm -mtriple=x86_64-linux-win32"
 
-
-    target = "vulkan"
+    # this is for running on windows
+    # target = "vulkan -mtriple=x86_64-pc-win32"
     target_host = "llvm -mtriple=x86_64-linux-win32"
 
     remote = autotvm.measure.request_remote(device, host, port, timeout=1000)
-    cpu_context = remote.cpu(0)
-    vulkan_context = remote.vulkan(0)
+
+    build_type = "vulkan"
+    if build_type == "cpu":
+        context = remote.cpu(0)
+        target = "llvm -mcpu=znver2"
+    elif build_type == "vulkan":
+        context = remote.vulkan(0)
+        target = "vulkan"
+    elif build_type == "hetero":
+        # context = ???
+        target = "llvm -mcpu=znver2"
+    else:
+        print("Must specify build_type")
+        sys.exit(-1)
 
     # target = {"llvm":"llvm -mcpu=znver2", "vulkan":"vulkan"}
     # target[cpu_context] = "llvm -mcpu=znver2" # windows llvm
@@ -97,11 +109,11 @@ if __name__ == "__main__":
     remote.upload(temp.relpath("graphlib.tar"))
     rlib = remote.load_module("graphlib.tar")
 
-    A = tvm.nd.array(np.array([[1, 2, 3], [4, 5, 6]], dtype="float32"), vulkan_context)
-    B = tvm.nd.array(np.array([[8, 7, 6], [5, 4, 3]], dtype="float32"), vulkan_context)
-    C = tvm.nd.array(np.array([[10, 11, 12], [13, 14, 15]], dtype="float32"), vulkan_context)
+    A = tvm.nd.array(np.array([[1, 2, 3], [4, 5, 6]], dtype="float32"), context)
+    B = tvm.nd.array(np.array([[8, 7, 6], [5, 4, 3]], dtype="float32"), context)
+    C = tvm.nd.array(np.array([[10, 11, 12], [13, 14, 15]], dtype="float32"), context)
 
-    module = runtime.GraphModule(rlib["default"](vulkan_context))
+    module = runtime.GraphModule(rlib["default"](context))
     # print(module.get_source())
     module.set_input(0, A)
     module.set_input(1, B)
