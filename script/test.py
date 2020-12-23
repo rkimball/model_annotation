@@ -53,37 +53,38 @@ def get_placement(expr):
     if isinstance(expr, Call):
         if isinstance(expr.op, Op):
             if expr.op.name in target_ops:
-                placement = "test_target"
+                placement = "vulkan"
     return placement
 
 
 if __name__ == "__main__":
     mod = get_model()
-    # print(mod)
+    print(mod)
 
     # mod = relay.transform.AnnotateCompiler(get_placement)(mod)
-
-    # print(mod)
-
     # mod = relay.transform.MergeCompilerRegions()(mod)
     # mod = relay.transform.PartitionGraph()(mod)
-
-    print(mod)
+    # print(mod)
 
     # setup remote execution
     device = "4900hs"
     host = "tracker"
     port = 9191
 
-    # target : str, :any:`tvm.target.Target`, or dict of str(i.e. device/context name) to str/tvm.target.Target, optional
-    #     For heterogeneous compilation, it is a dictionary indicating context to
-    #     target mapping. For homogeneous compilation, it is a build target.
-    target = "llvm -mcpu=znver2" # windows llvm
 
+    # target_host = "llvm -mtriple=x86_64-linux-win32"
+
+
+    target = "vulkan"
     target_host = "llvm -mtriple=x86_64-linux-win32"
 
     remote = autotvm.measure.request_remote(device, host, port, timeout=1000)
-    ctx = remote.cpu(0)
+    cpu_context = remote.cpu(0)
+    vulkan_context = remote.vulkan(0)
+
+    # target = {"llvm":"llvm -mcpu=znver2", "vulkan":"vulkan"}
+    # target[cpu_context] = "llvm -mcpu=znver2" # windows llvm
+    # target[vulkan_context] = "vulkan"
 
     with relay.build_config(opt_level=3):
         lib = relay.build(mod,
@@ -96,11 +97,11 @@ if __name__ == "__main__":
     remote.upload(temp.relpath("graphlib.tar"))
     rlib = remote.load_module("graphlib.tar")
 
-    A = tvm.nd.array(np.array([[1, 2, 3], [4, 5, 6]], dtype="float32"), ctx)
-    B = tvm.nd.array(np.array([[8, 7, 6], [5, 4, 3]], dtype="float32"), ctx)
-    C = tvm.nd.array(np.array([[10, 11, 12], [13, 14, 15]], dtype="float32"), ctx)
+    A = tvm.nd.array(np.array([[1, 2, 3], [4, 5, 6]], dtype="float32"), vulkan_context)
+    B = tvm.nd.array(np.array([[8, 7, 6], [5, 4, 3]], dtype="float32"), vulkan_context)
+    C = tvm.nd.array(np.array([[10, 11, 12], [13, 14, 15]], dtype="float32"), vulkan_context)
 
-    module = runtime.GraphModule(rlib["default"](ctx))
+    module = runtime.GraphModule(rlib["default"](vulkan_context))
     # print(module.get_source())
     module.set_input(0, A)
     module.set_input(1, B)
